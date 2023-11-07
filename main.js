@@ -7,6 +7,7 @@ const {HttpsProxyAgent} = require('https-proxy-agent');
 const { ATESTATOR_ABI } = require('./modules/abis');
 const { shuffle, timeout } = require('./modules/helper');
 const { Logger } = require('./modules/logger');
+const chalk = require('chalk');
 
 const logger = new Logger(true, __dirname + '/output/logs.txt');
 
@@ -95,6 +96,7 @@ async function confirmMint(axiosBody, account, hash) {
 async function main() {
     let wallets = fs.readFileSync(__dirname + '/wallets.txt', 'utf8').split('\n');
 
+    console.log(chalk.bold.blueBright('Mantle Abuze software by https://t.me/cookiejunkieeth'));    
     logger.info(`Starting with ${wallets.length} wallets`);
 
     MIX_WALLETS? wallets = shuffle(wallets) : '';
