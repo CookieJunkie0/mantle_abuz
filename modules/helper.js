@@ -13,6 +13,11 @@ function shuffle(array) {
     return array;
 }
 
+function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 module.exports = {
-    shuffle
+    shuffle,
+    timeout
 }
