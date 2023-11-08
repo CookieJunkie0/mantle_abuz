@@ -94,7 +94,7 @@ async function confirmMint(axiosBody, account, hash) {
     } catch(e) { return { success: false, err: e } }
 }
 async function main() {
-    let wallets = fs.readFileSync(__dirname + '/wallets.txt', 'utf8').split('\n');
+    let wallets = fs.readFileSync(__dirname + '/wallets.txt', 'utf8').split('\n\r');
 
     console.log(chalk.bold.blueBright('Mantle Abuze software by https://t.me/cookiejunkieeth'));    
     logger.info(`Starting with ${wallets.length} wallets`);
