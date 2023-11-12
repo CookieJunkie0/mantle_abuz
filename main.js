@@ -91,7 +91,7 @@ async function confirmMint(axiosBody, account, hash, jwt) {
         );
 
         const response2 = await axiosBody.get('https://mdi-quests-api-production.up.railway.app/page/module/user/profile', {
-            headers: {"Mdi-Jwt": `${response.data.web3Token}`}
+            headers: {"Mdi-Jwt": `${jwt}`}
         });
         
         return {success: true};
