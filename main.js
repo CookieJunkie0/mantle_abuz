@@ -55,7 +55,7 @@ async function register(axiosBody, account, inviteCode) {
             }
         });
 
-        return {success: true, inviteCode: refResponse.data.inviteCode};
+        return {success: true, inviteCode: refResponse.data.inviteCode, jwt: response.data.web3Token};
     } catch(e) {console.log(e);  return { success: false, err: e } }
 }
 
@@ -84,11 +84,15 @@ async function mintAtestat(axiosBody, account) {
     } catch(e) {return {success: false, err: e}}  
 }
 
-async function confirmMint(axiosBody, account, hash) {
+async function confirmMint(axiosBody, account, hash, jwt) {
     try {
         const response = await axiosBody.post("https://gateway.clique.social/sbt-signer/attestor/64c9cd892fce35a476860fb5/entry", 
             {"walletAddress": account.address,"additionalInformation": {"txHash": hash}}
         );
+
+        const response2 = await axiosBody.get('https://mdi-quests-api-production.up.railway.app/page/module/user/profile', {
+            headers: {"Mdi-Jwt": `${response.data.web3Token}`}
+        });
         
         return {success: true};
     } catch(e) { return { success: false, err: e } }
@@ -130,7 +134,7 @@ async function main() {
 
         logger.success(`${account.address} | Attestat minted, confirming for mantle - ${mint.hash}`);
 
-        const confirm = await confirmMint(axiosBody, account, mint.hash);
+        const confirm = await confirmMint(axiosBody, account, mint.hash, reg.jwt);
         if(!confirm.success) { logger.error(`${account.address} | ${confirm.err}` ); continue};
 
         fs.appendFileSync(__dirname + '/output/registered.txt', `${wallet}:${reg.inviteCode}\n`);
