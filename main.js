@@ -4,7 +4,7 @@ const ethers = require('ethers');
 const axios = require('axios');
 const fs = require('fs');
 const {HttpsProxyAgent} = require('https-proxy-agent');
-const { ATESTATOR_ABI } = require('./modules/abis');
+const { ATESTATOR_ABI, BVM_ABI } = require('./modules/abis');
 const { shuffle, timeout } = require('./modules/helper');
 const { Logger } = require('./modules/logger');
 const chalk = require('chalk');
@@ -17,6 +17,38 @@ const ROTATION_TIMEOUT = process.env.ROTATION_TIMEOUT * 1000;
 const INVITE_CODE = process.env.INVITE_CODE;
 const MIX_WALLETS = JSON.parse(process.env.MIX_WALLETS);
 const MANTLE_PROVIDER = new ethers.providers.JsonRpcProvider(process.env.MANTLE_RPC);
+
+const MAX_TX_PRICE = process.env.MAX_TX_PRICE;
+const WAIT_FOR_GAS = process.env.WAIT_FOR_GAS;
+const WAIT_PERIOD = process.env.WAIT_PERIOD;
+const WAIT_TRIES = process.env.WAIT_TRIES;
+
+async function checkAndWaitForGas() {
+    for(let i = 0; i < WAIT_TRIES; i++) {
+        const txPrice = await calcGasPrice();
+        if(!txPrice.success) continue;
+
+        const price = ethers.utils.formatEther(txPrice.price);
+        if(price > MAX_TX_PRICE) {
+            if(WAIT_FOR_GAS && i !== WAIT_TRIES - 1) { await timeout(WAIT_PERIOD); continue;}
+            return {success: false, err: `TX price too high: ${price}, max: ${MAX_TX_PRICE}`, price: price};
+        };
+
+        return {success: true, price: price};
+    }
+}
+
+async function calcGasPrice() {
+    try {
+        const contract = new ethers.Contract("0x420000000000000000000000000000000000000F", BVM_ABI, MANTLE_PROVIDER);
+        const l1BaseFee = await contract.l1BaseFee();
+        if(!l1BaseFee) return { success: false, err: "Failed to get l1BaseFee"}
+
+        return {success: true, price: l1BaseFee.mul("1854")};
+    } catch(e) { return { success: false, err: e } }
+}
+
+calcGasPrice().then(x => console.log(ethers.utils.formatEther(x.price)));
 
 async function changeProxy() {
     try {
@@ -129,6 +161,12 @@ async function main() {
 
         logger.success(`${account.address} | Account registered - minting attestatate...`);
 
+
+        logger.info(`${account.address} | Checking gas price...`);
+        const gas = await checkAndWaitForGas();
+        if(!gas.success) { logger.error(`${account.address} | ${gas.err}` ); continue};
+
+        logger.info(`${account.address} | Gas price ok(${gas.price}), minting attestatate...`);
         const mint = await mintAtestat(axiosBody, account);
         if(!mint.success) { logger.error(`${account.address} | ${mint.err}` ); continue};
 
@@ -142,4 +180,4 @@ async function main() {
     }
 }
 
-main()
+// main()
