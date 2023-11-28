@@ -48,8 +48,6 @@ async function calcGasPrice() {
     } catch(e) { return { success: false, err: e } }
 }
 
-calcGasPrice().then(x => console.log(ethers.utils.formatEther(x.price)));
-
 async function changeProxy() {
     try {
         const response = await axios.get(PROXY_ROTATION_LINK);
@@ -180,4 +178,4 @@ async function main() {
     }
 }
 
-// main()
+main()
